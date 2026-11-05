@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Microphone Test</title>
+</head>
+<body style="font-family: Arial; padding: 30px;">
+
+  <h2>Speaking Homework - Microphone Test</h2>
+
+  <p>Click the button below to test your microphone.</p>
+
+  <button onclick="testMicrophone()">Test Microphone</button>
+
+  <p id="status">Waiting for microphone test...</p>
+
+  <script>
+    async function testMicrophone() {
+      const status = document.getElementById('status');
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true
+        });
+
+        status.textContent = 'SUCCESS! Your microphone is working.';
+        stream.getTracks().forEach(track => track.stop());
+
+      } catch (error) {
+        status.textContent = 'ERROR: ' + error.name + ' - ' + error.message;
+      }
+    }
+  </script>
+
+</body>
+</html>
