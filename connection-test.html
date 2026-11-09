@@ -1,10 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Connection Test</title>
+  <title>Apps Script Connection Test</title>
 </head>
 <body>
   <h1>Apps Script Connection Test</h1>
-  <p>If you can see this page, GitHub Pages is working.</p>
+
+  <button onclick="testConnection()">Load HW1002</button>
+
+  <p id="status">Waiting for test...</p>
+  <pre id="result"></pre>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzCPm9LwQel_Rw7mk_5AkXWqpMKYI23KWRdyKz6vlTx9ze8Aqk_PdLkdxZ6OAblWDCB/exec";
+
+    async function testConnection() {
+      document.getElementById("status").textContent = "Connecting...";
+
+      try {
+        const response = await fetch(
+          SCRIPT_URL + "?action=getHomework&hw=HW1002"
+        );
+
+        const data = await response.json();
+
+        document.getElementById("status").textContent =
+          "Connection successful!";
+
+        document.getElementById("result").textContent =
+          JSON.stringify(data, null, 2);
+
+      } catch (error) {
+        document.getElementById("status").textContent =
+          "Connection failed: " + error.message;
+      }
+    }
+  </script>
 </body>
 </html>
