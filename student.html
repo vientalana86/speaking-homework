@@ -1,0 +1,487 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  
+<base target="_top">
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzCPm9LwQel_Rw7mk_5AkXWqpMKYI23KWRdyKz6vlTx9ze8Aqk_PdLkdxZ6OAblWDCB/exec";
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f7f3;
+      color: #26352b;
+      padding: 20px;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 24px;
+      border-radius: 15px;
+      box-shadow: 0 3px 12px #0001;
+    }
+
+    h1 {
+      color: #168b45;
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin-top: 16px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 7px;
+      border: 1px solid #ccc;
+      border-radius: 7px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 13px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #168b45;
+      color: white;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .secondary {
+      background: #e8eee9;
+      color: #26352b;
+      flex: 1;
+    }
+
+    .record {
+      background: #168b45;
+      color: white;
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    .stop {
+      background: #c0392b;
+      color: white;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .question-image {
+      width: 100%;
+      border-radius: 10px;
+      margin-top: 15px;
+    }
+
+    .question-box {
+      background: #f3f7f3;
+      padding: 18px;
+      border-radius: 10px;
+      margin-top: 18px;
+    }
+
+    .navigation {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    #timer {
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      margin: 15px;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>Speaking Homework</h1>
+
+  <div id="studentDetails">
+    <h2>Before You Begin</h2>
+    <p>Please enter your details.</p>
+
+    <label>Student's Name</label>
+    <input id="studentName" placeholder="Enter your full name">
+
+    <label>Class</label>
+    <input id="studentClass" placeholder="e.g. Movers A2">
+
+    <button class="primary" id="startButton" onclick="startHomework()">
+      Start Homework
+    </button>
+  </div>
+
+  <div id="homeworkArea" class="hidden">
+
+    <h2 id="homeworkTitle"></h2>
+    <p id="homeworkLevel"></p>
+
+    <div class="question-box">
+      <p id="questionNumber"></p>
+
+      <img id="questionImage" class="question-image hidden">
+
+      <h3 id="questionText"></h3>
+
+      <p id="questionInstructions"></p>
+
+      <p id="timeLimit"></p>
+
+      <div id="timer">00:00</div>
+
+      <button class="record" id="recordButton" onclick="startRecording()">
+        Start Recording
+      </button>
+
+      <button class="stop" id="stopButton" onclick="stopRecording()" disabled>
+        Stop Recording
+      </button>
+
+      <audio id="audioPlayback" controls class="hidden"></audio>
+
+      <button class="secondary hidden" id="retryButton" onclick="retryRecording()">
+        Record Again
+      </button>
+    </div>
+
+    <div class="navigation">
+      <button class="secondary" id="previousButton" onclick="previousQuestion()">
+        Previous
+      </button>
+
+      <button class="primary" id="nextButton" onclick="nextQuestion()">
+        Next
+      </button>
+    </div>
+
+    <button class="primary hidden" id="submitButton" onclick="submitHomework()">
+      Submit Homework
+    </button>
+
+  </div>
+
+  <div id="message"></div>
+
+</div>
+
+<script>
+const homeworkID = new URLSearchParams(window.location.search).get('hw');
+
+let homeworkData = null;
+let currentQuestion = 0;
+let recordings = [];
+
+window.onload = async function() {
+  try {
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify({
+        action: 'getHomework',
+        hwID: homeworkID
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data || !data.questions || data.questions.length === 0) {
+      throw new Error("No homework questions were found.");
+    }
+
+    homeworkData = data;
+    recordings = new Array(data.questions.length).fill(null);
+
+    document.getElementById('homeworkTitle').textContent = data.topic;
+    document.getElementById('homeworkLevel').textContent = data.level;
+    document.getElementById('studentDetails').classList.remove('hidden');
+    document.getElementById('message').textContent = '';
+
+  } catch (error) {
+    document.getElementById('message').textContent =
+      'Unable to load homework: ' + error.message;
+  }
+};
+
+function startHomework() {
+  
+  const name = document.getElementById('studentName').value.trim();
+  const studentClass = document.getElementById('studentClass').value.trim();
+
+  if (!name || !studentClass) {
+    alert('Please enter your name and class.');
+    return;
+  }
+
+  document.getElementById('studentDetails').classList.add('hidden');
+  document.getElementById('homeworkArea').classList.remove('hidden');
+
+  showQuestion();
+}
+
+function showQuestion() {
+  const question = homeworkData.questions[currentQuestion];
+
+  document.getElementById('questionNumber').textContent =
+    'Question ' + (currentQuestion + 1) + ' of ' + homeworkData.questions.length;
+
+  document.getElementById('questionText').textContent = question.question;
+
+  document.getElementById('questionInstructions').textContent =
+    question.additionalInstructions || '';
+
+  document.getElementById('timeLimit').textContent =
+    'Recording time: ' + question.timeLimit;
+
+  document.getElementById('previousButton').disabled = currentQuestion === 0;
+
+  document.getElementById('nextButton').classList.toggle(
+    'hidden',
+    currentQuestion === homeworkData.questions.length - 1
+  );
+
+  document.getElementById('submitButton').classList.toggle(
+    'hidden',
+    currentQuestion !== homeworkData.questions.length - 1
+  );
+
+  const image = document.getElementById('questionImage');
+
+  if (question.pictureLink) {
+    image.src = question.pictureLink;
+    image.classList.remove('hidden');
+  } else {
+    image.classList.add('hidden');
+  }
+
+  document.getElementById('audioPlayback').classList.add('hidden');
+  document.getElementById('retryButton').classList.add('hidden');
+  document.getElementById('recordButton').disabled = false;
+  document.getElementById('timer').textContent = '00:00';
+
+  if (recordings[currentQuestion]) {
+    const audio = document.getElementById('audioPlayback');
+    audio.src = recordings[currentQuestion].url;
+    audio.classList.remove('hidden');
+    document.getElementById('retryButton').classList.remove('hidden');
+    document.getElementById('recordButton').disabled = true;
+  }
+}
+
+function previousQuestion() {
+  if (currentQuestion > 0) {
+    currentQuestion--;
+    showQuestion();
+  }
+}
+
+function nextQuestion() {
+  if (currentQuestion < homeworkData.questions.length - 1) {
+    currentQuestion++;
+    showQuestion();
+  }
+}
+
+let mediaRecorder = null;
+let audioChunks = [];
+let recordingStream = null;
+let timerInterval = null;
+let remainingSeconds = 0;
+
+function startRecording() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia ||
+      typeof MediaRecorder === 'undefined') {
+    alert('Audio recording is not supported in this browser. Please try an updated Chrome or Safari browser.');
+    return;
+  }
+
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(function(stream) {
+      recordingStream = stream;
+      audioChunks = [];
+
+      const mimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/mp4',
+        'audio/webm'
+      ];
+
+      let selectedMimeType = '';
+
+      for (const type of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          selectedMimeType = type;
+          break;
+        }
+      }
+
+      mediaRecorder = selectedMimeType
+        ? new MediaRecorder(stream, { mimeType: selectedMimeType })
+        : new MediaRecorder(stream);
+
+      mediaRecorder.ondataavailable = function(event) {
+        if (event.data && event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = function() {
+        const audioBlob = new Blob(audioChunks, {
+          type: mediaRecorder.mimeType || 'audio/webm'
+        });
+
+        if (recordings[currentQuestion] &&
+            recordings[currentQuestion].url) {
+          URL.revokeObjectURL(recordings[currentQuestion].url);
+        }
+
+        const audioURL = URL.createObjectURL(audioBlob);
+
+        recordings[currentQuestion] = {
+          blob: audioBlob,
+          url: audioURL
+        };
+
+        const playback = document.getElementById('audioPlayback');
+        playback.src = audioURL;
+        playback.classList.remove('hidden');
+
+        document.getElementById('retryButton').classList.remove('hidden');
+        document.getElementById('recordButton').disabled = true;
+
+        document.getElementById('message').textContent =
+          'Recording saved for this question. Listen before continuing.';
+
+        stream.getTracks().forEach(function(track) {
+          track.stop();
+        });
+
+        recordingStream = null;
+      };
+
+      mediaRecorder.start();
+
+      document.getElementById('recordButton').disabled = true;
+      document.getElementById('stopButton').disabled = false;
+      document.getElementById('previousButton').disabled = true;
+      document.getElementById('nextButton').disabled = true;
+      document.getElementById('message').textContent = 'Recording in progress...';
+
+      const question = homeworkData.questions[currentQuestion];
+      remainingSeconds = Math.round(parseFloat(question.timeLimit) * 60);
+
+      updateTimer();
+
+      timerInterval = setInterval(function() {
+        remainingSeconds--;
+        updateTimer();
+
+        if (remainingSeconds <= 0) {
+          stopRecording();
+        }
+      }, 1000);
+    })
+   .catch(function(error) {
+  console.error('Microphone error:', error.name, error.message);
+
+  alert(
+    'Unable to access your microphone.\n\n' +
+    'Error: ' + error.name + '\n' +
+    'Details: ' + error.message
+  );
+});
+
+}
+
+function updateTimer() {
+  const minutes = Math.floor(remainingSeconds / 60);
+  const seconds = remainingSeconds % 60;
+
+  document.getElementById('timer').textContent =
+    String(minutes).padStart(2, '0') + ':' +
+    String(seconds).padStart(2, '0');
+}
+
+function stopRecording() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+  }
+
+  document.getElementById('stopButton').disabled = true;
+  document.getElementById('previousButton').disabled = false;
+  document.getElementById('nextButton').disabled = false;
+}
+
+function retryRecording() {
+  if (recordings[currentQuestion] && recordings[currentQuestion].url) {
+    URL.revokeObjectURL(recordings[currentQuestion].url);
+  }
+
+  recordings[currentQuestion] = null;
+
+  const playback = document.getElementById('audioPlayback');
+  playback.pause();
+  playback.removeAttribute('src');
+  playback.classList.add('hidden');
+
+  document.getElementById('retryButton').classList.add('hidden');
+  document.getElementById('recordButton').disabled = false;
+  document.getElementById('timer').textContent = '00:00';
+  document.getElementById('message').textContent = '';
+}
+
+
+
+
+</script>
+
+</body>
+</html>
+
