@@ -290,7 +290,8 @@ function showQuestion() {
   const image = document.getElementById('questionImage');
 
   if (question.pictureLink) {
-    image.src = question.pictureLink;
+   const fileId = question.pictureLink.match(/\/d\/([^/]+)/)[1];
+image.src = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000';
     image.classList.remove('hidden');
   } else {
     image.classList.add('hidden');
