@@ -486,6 +486,79 @@ function retryRecording() {
 
 
 
+async function submitHomework() {
+  const name = document.getElementById('studentName').value.trim();
+  const studentClass = document.getElementById('studentClass').value.trim();
+  const button = document.getElementById('submitButton');
+  const message = document.getElementById('message');
+
+  if (!name || !studentClass) {
+    alert('Please enter your name and class.');
+    return;
+  }
+
+  if (!homeworkData || !homeworkData.questions) {
+    alert('Homework information is missing. Please refresh the page.');
+    return;
+  }
+
+  if (recordings.length !== homeworkData.questions.length ||
+      recordings.some(recording => !recording || !recording.blob)) {
+    alert('Please record an answer for every question before submitting.');
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = 'Submitting...';
+  message.textContent = 'Please wait. Uploading your recordings...';
+
+  try {
+    for (let i = 0; i < homeworkData.questions.length; i++) {
+      const recording = recordings[i];
+      const question = homeworkData.questions[i];
+
+      const audioData = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = () => reject(new Error('Could not read recording.'));
+        reader.readAsDataURL(recording.blob);
+      });
+
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify({
+          action: 'saveAudioSubmission',
+          submissionData: {
+            hwID: homeworkID,
+            questionID: question.questionID,
+            studentName: name,
+            studentClass: studentClass,
+            audioData: audioData,
+            mimeType: recording.blob.type || 'audio/webm'
+          }
+        })
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed.');
+      }
+    }
+
+    message.textContent = 'Success! Your homework has been submitted.';
+    button.textContent = 'Submitted';
+
+  } catch (error) {
+    message.textContent = 'Submission failed: ' + error.message;
+    button.disabled = false;
+    button.textContent = 'Submit Homework';
+  }
+}
+
 
 </script>
 
