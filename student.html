@@ -289,13 +289,19 @@ function showQuestion() {
 
   const image = document.getElementById('questionImage');
 
-  if (question.pictureLink) {
-   const fileId = question.pictureLink.match(/\/d\/([^/]+)/)[1];
-image.src = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000';
-    image.classList.remove('hidden');
-  } else {
+ if (question.pictureLink) {
+        const match = question.pictureLink.match(/\/d\/([^/]+)/);
+
+    if (match) {
+        const fileId = match[1];
+        image.src = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000';
+        image.classList.remove('hidden');
+    } else {
+        image.classList.add('hidden');
+    }
+} else {
     image.classList.add('hidden');
-  }
+}
 
   document.getElementById('audioPlayback').classList.add('hidden');
   document.getElementById('retryButton').classList.add('hidden');
