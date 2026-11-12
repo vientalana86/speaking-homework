@@ -237,6 +237,8 @@ window.onload = async function() {
 
     document.getElementById('homeworkTitle').textContent = data.topic;
     document.getElementById('homeworkLevel').textContent = data.level;
+document.getElementById('ieltsPartDisplay').textContent =
+  data.level === 'IELTS' && data.ieltsPart ? 'IELTS ' + data.ieltsPart : '';
     document.getElementById('studentDetails').classList.remove('hidden');
     document.getElementById('message').textContent = '';
 
