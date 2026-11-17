@@ -168,7 +168,15 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzCPm9LwQel_Rw7mk_5A
       <p id="questionInstructions"></p>
 
       <p id="timeLimit"></p>
-
+<div id="preparationArea" class="hidden">
+  <p>Preparation Time</p>
+  <div id="preparationTimer">01:00</div>
+  <button class="primary" id="startPreparationButton"
+    onclick="startPreparation()">
+    Start Preparation
+  </button>
+  <p id="preparationMessage"></p>
+</div>
       <div id="timer">00:00</div>
 
       <button class="record" id="recordButton" onclick="startRecording()">
@@ -318,6 +326,30 @@ function showQuestion() {
     document.getElementById('retryButton').classList.remove('hidden');
     document.getElementById('recordButton').disabled = true;
   }
+  const preparationArea = document.getElementById('preparationArea');
+
+  if (
+    homeworkData.level === 'IELTS' &&
+    homeworkData.ieltsPart === 'Part 2' &&
+    !recordings[currentQuestion]
+  ) {
+    preparationArea.classList.remove('hidden');
+
+    const totalSeconds = Math.round(
+      parseFloat(homeworkData.preparationTime) * 60
+    );
+
+    document.getElementById('preparationTimer').textContent =
+      String(Math.floor(totalSeconds / 60)).padStart(2, '0') + ':' +
+      String(totalSeconds % 60).padStart(2, '0');
+
+    document.getElementById('preparationMessage').textContent = '';
+    document.getElementById('startPreparationButton').disabled = false;
+    document.getElementById('recordButton').disabled = true;
+
+  } else {
+    preparationArea.classList.add('hidden');
+  }
 }
 
 function previousQuestion() {
@@ -453,7 +485,49 @@ function updateTimer() {
     String(minutes).padStart(2, '0') + ':' +
     String(seconds).padStart(2, '0');
 }
+let preparationInterval = null;
+let preparationSeconds = 0;
 
+function startPreparation() {
+  preparationSeconds = Math.round(
+    parseFloat(homeworkData.preparationTime) * 60
+  );
+
+  if (!preparationSeconds || preparationSeconds <= 0) {
+    alert('Preparation time is not available.');
+    return;
+  }
+
+  document.getElementById('startPreparationButton').disabled = true;
+  document.getElementById('preparationMessage').textContent =
+    'Your preparation has started.';
+
+  updatePreparationTimer();
+
+  preparationInterval = setInterval(function() {
+    preparationSeconds--;
+    updatePreparationTimer();
+
+    if (preparationSeconds <= 0) {
+      clearInterval(preparationInterval);
+      preparationInterval = null;
+
+      document.getElementById('preparationMessage').textContent =
+        'Preparation time is over. You can start recording now.';
+
+      document.getElementById('recordButton').disabled = false;
+    }
+  }, 1000);
+}
+
+function updatePreparationTimer() {
+  const minutes = Math.floor(preparationSeconds / 60);
+  const seconds = preparationSeconds % 60;
+
+  document.getElementById('preparationTimer').textContent =
+    String(minutes).padStart(2, '0') + ':' +
+    String(seconds).padStart(2, '0');
+}
 function stopRecording() {
   if (timerInterval) {
     clearInterval(timerInterval);
