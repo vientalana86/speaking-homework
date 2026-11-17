@@ -14,34 +14,37 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzCPm9LwQel_Rw7mk_5AkXWqpMKYI23KWRdyKz6vlTx9ze8Aqk_PdLkdxZ6OAblWDCB/exec";
 
-    async function testConnection() {
-      document.getElementById("status").textContent = "Connecting...";
+    
+function testConnection() {
+  document.getElementById("status").textContent = "Connecting...";
 
-      try {
-        const response = await fetch(SCRIPT_URL, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'text/plain;charset=utf-8'
-  },
-  body: JSON.stringify({
-    action: 'getHomework',
-    hwID: 'HW1002'
-  })
-});
+  const callbackName = "handleHomeworkResponse";
 
-        const data = await response.json();
+  window[callbackName] = function(data) {
+    document.getElementById("status").textContent =
+      "Connection successful!";
 
-        document.getElementById("status").textContent =
-          "Connection successful!";
+    document.getElementById("result").textContent =
+      JSON.stringify(data, null, 2);
 
-        document.getElementById("result").textContent =
-          JSON.stringify(data, null, 2);
+    delete window[callbackName];
+  };
 
-      } catch (error) {
-        document.getElementById("status").textContent =
-          "Connection failed: " + error.message;
-      }
-    }
+  const script = document.createElement("script");
+
+  script.src = SCRIPT_URL +
+    "?action=getHomework&hw=HW1002&callback=" + callbackName;
+
+  script.onerror = function() {
+    document.getElementById("status").textContent =
+      "Connection failed. Please check the Apps Script deployment.";
+
+    delete window[callbackName];
+  };
+
+  document.body.appendChild(script);
+}
+
   </script>
 </body>
 </html>
